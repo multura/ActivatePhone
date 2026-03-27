@@ -11,17 +11,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
+      # 1️⃣ Checkout
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # 2️⃣ Install build dependencies
-      - name: Install dependencies
+      # 2️⃣ Install minimal deps without apt-update
+      - name: Install build dependencies
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y build-essential perl dpkg git curl
-
-          # ldid не всегда в репозитории, скачиваем бинарь
+          sudo apt-get install -y --no-install-recommends dpkg perl git curl
+          # ldid: скачиваем бинарник
           curl -L https://github.com/theos/ldid/releases/download/2.1.2/ldid_2.1.2_linux_amd64.tar.gz -o ldid.tar.gz
           tar -xzf ldid.tar.gz
           sudo mv ldid /usr/local/bin/
@@ -37,13 +35,12 @@ jobs:
         env:
           THEOS: ${{ env.THEOS }}
         run: |
-          cd $GITHUB_WORKSPACE
           make clean
           export ARCHS="arm arm64 arm64e"
           export TARGET=iPhone:clang:14.0
           make package FINALPACKAGE=1
 
-      # 5️⃣ Upload .deb as artifact
+      # 5️⃣ Upload .deb
       - name: Upload .deb
         uses: actions/upload-artifact@v4
         with:
