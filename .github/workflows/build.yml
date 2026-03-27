@@ -7,28 +7,37 @@ on:
 
 jobs:
   build:
-    name: Build .deb (arm + arm64 + arm64e)
+    name: Build ActivatePhone .deb
     runs-on: macos-latest
 
     steps:
+      # 1️⃣ Скачиваем код
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      # 2️⃣ Устанавливаем Theos
       - name: Install Theos
         run: |
           git clone --depth=1 https://github.com/theos/theos.git ~/theos
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Install dependencies
+      # 3️⃣ Устанавливаем зависимости для сборки .deb
+      - name: Install build dependencies
         run: |
-          brew install ldid dpkg make
+          brew install ldid dpkg perl make
 
+      # 4️⃣ Собираем твик
       - name: Build tweak
         env:
           THEOS: ${{ env.THEOS }}
         run: |
-          make clean package FINALPACKAGE=1
+          make clean
+          # Минимальная iOS 14, архитектуры arm arm64 arm64e
+          export ARCHS="arm arm64 arm64e"
+          export TARGET=iPhone:clang:14.0
+          make package FINALPACKAGE=1
 
+      # 5️⃣ Загружаем собранный .deb как артефакт
       - name: Upload .deb
         uses: actions/upload-artifact@v4
         with:
