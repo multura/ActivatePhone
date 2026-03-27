@@ -1,4 +1,4 @@
-name: Build iOS Tweak
+name: Компиляция твика
 
 on:
   push:
@@ -11,23 +11,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Скачиваем код
+      # 1️⃣ Checkout repository
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # 2️⃣ Устанавливаем зависимости для сборки
+      # 2️⃣ Install build dependencies
       - name: Install dependencies
         run: |
-          sudo apt update
-          sudo apt install -y build-essential perl dpkg ldid git curl
+          sudo apt-get update -y
+          sudo apt-get install -y build-essential perl dpkg git curl
 
-      # 3️⃣ Скачиваем Theos
+          # ldid не всегда в репозитории, скачиваем бинарь
+          curl -L https://github.com/theos/ldid/releases/download/2.1.2/ldid_2.1.2_linux_amd64.tar.gz -o ldid.tar.gz
+          tar -xzf ldid.tar.gz
+          sudo mv ldid /usr/local/bin/
+
+      # 3️⃣ Install Theos
       - name: Install Theos
         run: |
           git clone --depth=1 https://github.com/theos/theos.git ~/theos
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      # 4️⃣ Собираем твик
+      # 4️⃣ Build tweak
       - name: Build tweak
         env:
           THEOS: ${{ env.THEOS }}
@@ -38,7 +43,7 @@ jobs:
           export TARGET=iPhone:clang:14.0
           make package FINALPACKAGE=1
 
-      # 5️⃣ Загружаем .deb как артефакт
+      # 5️⃣ Upload .deb as artifact
       - name: Upload .deb
         uses: actions/upload-artifact@v4
         with:
